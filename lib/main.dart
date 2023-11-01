@@ -1,12 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:repair_requests/ClientScreen.dart';
+import 'package:repair_requests/EmployeeScreen.dart';
 
 void main() {
   runApp(MaterialApp(
+    debugShowCheckedModeBanner: false,
     title: 'Ваше приложение',
     initialRoute: '/login',
     routes: {
       '/login': (BuildContext context) => LoginPage(),
-      '/home': (BuildContext context) => HomePage(),
+      '/home/client': (BuildContext context) => ClientHomePage(),
+      '/home/employee': (BuildContext context) => EmployeeHomePage(),
     },
   ));
 }
@@ -37,7 +41,7 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Вход')),
+      appBar: AppBar(title: Text('Вход'), centerTitle: true,),
       body: Container(
         color: Colors.green, // Устанавливаем зеленый цвет фона
         padding: EdgeInsets.all(16.0),
@@ -102,62 +106,64 @@ class _LoginPageState extends State<LoginPage> {
                       bool isLoginValid = false;
                       bool isPasswordValid = false;
                       bool isEmployeeCodeValid = false;
-
                       for (var client in clients) {
-                        if (username == client['username'] && password == client['password']) {
+                        if (client['username'] == username && client['password'] == password) {
                           isLoginValid = true;
-                          isPasswordValid =true;
+                          isPasswordValid = true;
                           break;
                         }
                       }
 
                       for (var employee in employees) {
-                        if (username == employee['username'] && password == employee['password']) {
+                        if (employee['username'] == username &&
+                            employee['password'] == password &&
+                            employee['employeeCode'] == employeeCode) {
                           isLoginValid = true;
                           isPasswordValid = true;
-
-                          if (isEmployee && employeeCode == employee['employeeCode']) {
-                            isEmployeeCodeValid = true;
-                          }
+                          isEmployeeCodeValid = true;
                           break;
                         }
                       }
 
                       if (isLoginValid && isPasswordValid) {
-                        if (isEmployee && !isEmployeeCodeValid) {
-                          showDialog(
-                            context: context,
-                            builder: (BuildContext context) {
-                              return AlertDialog(
-                                title: Text('Ошибка входа'),
-                                content: Text('Неправильный код сотрудника.'),
-                                actions: [
-                                  TextButton(
-                                    child: Text('ОК'),
-                                    onPressed: () {
-                                      Navigator.of(context).pop();
-                                    },
-                                  ),
-                                ],
-                              );
-                            },
-                          );
+                        if (isEmployee) {
+                          if (isEmployeeCodeValid) {
+                            Navigator.pushReplacementNamed(context, '/home/employee');
+                          } else {
+                            showDialog(
+                              context: context,
+                              builder: (context) {
+                                return AlertDialog(
+                                  title: Text('Ошибка'),
+                                  content: Text('Неверный код сотрудника'),
+                                  actions: [
+                                    ElevatedButton(
+                                      onPressed: () {
+                                        Navigator.pop(context);
+                                      },
+                                      child: Text('OK'),
+                                    ),
+                                  ],
+                                );
+                              },
+                            );
+                          }
                         } else {
-                          Navigator.pushNamed(context, '/home');
+                          Navigator.pushReplacementNamed(context, '/home/client');
                         }
                       } else {
                         showDialog(
                           context: context,
-                          builder: (BuildContext context) {
+                          builder: (context) {
                             return AlertDialog(
-                              title: Text('Ошибка входа'),
-                              content: Text('Неправильный логин или пароль.'),
+                              title: Text('Ошибка'),
+                              content: Text('Неверное имя пользователя или пароль'),
                               actions: [
-                                TextButton(
-                                  child: Text('ОК'),
+                                ElevatedButton(
                                   onPressed: () {
-                                    Navigator.of(context).pop();
+                                    Navigator.pop(context);
                                   },
+                                  child: Text('OK'),
                                 ),
                               ],
                             );
@@ -177,14 +183,4 @@ class _LoginPageState extends State<LoginPage> {
   }
 }
 
-class HomePage extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text('Главная')),
-      body: Center(
-        child: Text('Добро пожаловать на главную страницу!'),
-      ),
-    );
-  }
-}
+
