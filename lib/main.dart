@@ -128,7 +128,7 @@ class _LoginPageState extends State<LoginPage> {
                       if (isLoginValid && isPasswordValid) {
                         if (isEmployee) {
                           if (isEmployeeCodeValid) {
-                            Navigator.pushReplacementNamed(context, '/home/employee');
+                            Navigator.pushNamed(context, '/home/employee');
                           } else {
                             showDialog(
                               context: context,
@@ -149,7 +149,7 @@ class _LoginPageState extends State<LoginPage> {
                             );
                           }
                         } else {
-                          Navigator.pushReplacementNamed(context, '/home/client');
+                          Navigator.pushNamed(context, '/home/client');
                         }
                       } else {
                         showDialog(

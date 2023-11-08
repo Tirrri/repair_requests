@@ -1,4 +1,6 @@
 // Страница клиентов
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/cupertino.dart';
@@ -65,6 +67,18 @@ class ClientHomePage extends StatelessWidget {
                 );
               },
             ),
+            ListTile(
+              leading: Icon(Icons.exit_to_app),
+              title: Text(
+                'Выход',
+                style: TextStyle(
+                  color: Colors.green[400],
+                ),
+              ),
+              onTap: () {
+                Navigator.popUntil(context, ModalRoute.withName('/login'));
+              },
+            ),
           ],
         ),
       ),
@@ -116,11 +130,18 @@ class _RepairRequestPageState extends State<RepairRequestPage> {
   }
 
   Future<void> submitRequest() async {
+    // Создаем объект заявки
+    RepairRequest newRequest = RepairRequest(
+      deviceType: deviceTypeController.text,
+      customerNumber: customerNumberController.text,
+      submissionDate: submissionDate ?? DateTime.now(),
+      problemDescription: problemDescriptionController.text,
+    );
+
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.setString('deviceType', deviceTypeController.text);
-    await prefs.setString('customerNumber', customerNumberController.text);
-    await prefs.setString('submissionDate', submissionDate.toString());
-    await prefs.setString('problemDescription', problemDescriptionController.text);
+    List<String> savedRequests = prefs.getStringList('repairRequests') ?? [];
+    savedRequests.add(jsonEncode(newRequest.toJson()));
+    await prefs.setStringList('repairRequests', savedRequests);
 
     showDialog(
       context: context,
@@ -139,13 +160,17 @@ class _RepairRequestPageState extends State<RepairRequestPage> {
   }
 
   Future<void> _selectDate(BuildContext context) async {
-    final DateTime? picked = await showDatePicker(
+    DateTime? picked = await showDatePicker(
       context: context,
       initialDate: DateTime.now(),
       firstDate: DateTime(2010),
       lastDate: DateTime(2030),
+      initialDatePickerMode: DatePickerMode.day
     );
     if (picked != null && picked != submissionDate) {
+      
+      picked =  DateTime.now();
+      print(picked);
       setState(() {
         submissionDate = picked;
       });
@@ -216,6 +241,7 @@ class _RepairRequestPageState extends State<RepairRequestPage> {
     );
   }
 }
+
 
 
 class EmployeesPage extends StatelessWidget {
@@ -305,5 +331,36 @@ class EmployeeCard extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+class RepairRequest {
+  String deviceType;
+  String customerNumber;
+  DateTime submissionDate;
+  String problemDescription;
+  RepairRequest({
+    required this.deviceType,
+    required this.customerNumber,
+    required this.submissionDate,
+    required this.problemDescription,
+  });
+
+  factory RepairRequest.fromJson(Map<String, dynamic> json) {
+    return RepairRequest(
+      deviceType: json['deviceType'],
+      customerNumber: json['customerNumber'],
+      submissionDate: DateTime.parse(json['submissionDate']),
+      problemDescription: json['problemDescription'],
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'deviceType': deviceType,
+      'customerNumber': customerNumber,
+      'submissionDate': submissionDate.toString(),
+      'problemDescription': problemDescription,
+    };
   }
 }
