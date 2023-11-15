@@ -113,6 +113,8 @@ class ExistingRequestsPage extends StatefulWidget {
 
 class _ExistingRequestsPageState extends State<ExistingRequestsPage> {
   List<RepairRequest> repairRequests = [];
+  List<RepairRequest> filteredRequests = [];
+  bool isSearching = false;
 
   @override
   void initState() {
@@ -126,8 +128,10 @@ class _ExistingRequestsPageState extends State<ExistingRequestsPage> {
     if (requestList != null) {
       setState(() {
         repairRequests = requestList
-            .map((requestData) => RepairRequest.fromJson(jsonDecode(requestData)))
+            .map((requestData) =>
+                RepairRequest.fromJson(jsonDecode(requestData)))
             .toList();
+        filteredRequests = repairRequests;
       });
     }
   }
@@ -137,12 +141,15 @@ class _ExistingRequestsPageState extends State<ExistingRequestsPage> {
     List<String>? requestList = prefs.getStringList('repairRequests');
     if (requestList != null) {
       List<RepairRequest> sortedRequests = requestList
-          .map((requestData) => RepairRequest.fromJson(jsonDecode(requestData)))
+          .map((requestData) =>
+              RepairRequest.fromJson(jsonDecode(requestData)))
           .toList();
-      sortedRequests.sort((a, b) => a.submissionDate.compareTo(b.submissionDate));
+      sortedRequests.sort((a, b) =>
+          a.submissionDate.compareTo(b.submissionDate));
 
       setState(() {
         repairRequests = sortedRequests;
+        filteredRequests = repairRequests;
       });
     }
   }
@@ -154,17 +161,21 @@ class _ExistingRequestsPageState extends State<ExistingRequestsPage> {
     if (requestList != null) {
       DateTime now = DateTime.now();
       DateTime startOfToday = DateTime(now.year, now.month, now.day);
-      DateTime endOfToday = DateTime(now.year, now.month, now.day, 23, 59, 59);
+      DateTime endOfToday =
+          DateTime(now.year, now.month, now.day, 23, 59, 59);
       List<RepairRequest> sortedRequests = requestList
-          .map((requestData) => RepairRequest.fromJson(jsonDecode(requestData)))
+          .map((requestData) =>
+              RepairRequest.fromJson(jsonDecode(requestData)))
           .where((request) =>
               request.submissionDate.isAfter(startOfToday) &&
               request.submissionDate.isBefore(endOfToday))
           .toList();
 
-      sortedRequests.sort((a, b) => b.submissionDate.compareTo(a.submissionDate));
+      sortedRequests.sort((a, b) =>
+          b.submissionDate.compareTo(a.submissionDate));
       setState(() {
         repairRequests = sortedRequests;
+        filteredRequests = repairRequests;
         print(repairRequests);
       });
     }
@@ -176,6 +187,7 @@ class _ExistingRequestsPageState extends State<ExistingRequestsPage> {
     if (requestList != null) {
       setState(() {
         repairRequests.removeAt(index);
+        filteredRequests.removeAt(index);
         requestList = repairRequests
             .map((request) => jsonEncode(request.toJson()))
             .toList();
@@ -184,13 +196,44 @@ class _ExistingRequestsPageState extends State<ExistingRequestsPage> {
     }
   }
 
+Future<void> searchRequest(String query) async {
+  List<RepairRequest> searchResults = repairRequests
+      .where((request) =>
+          request.deviceType.toLowerCase().contains(query.toLowerCase()))
+      .toList();
+
+  setState(() {
+    filteredRequests = searchResults;
+  });
+}
+
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Существующие заявки'),
+        title: isSearching
+            ? TextField(
+                onChanged: (value) => searchRequest(value),
+                decoration: InputDecoration(
+                  hintText: 'Поиск заявок...',
+                  hintStyle: TextStyle(color: Colors.white70),
+                ),
+              )
+            : Text('Существующие заявки'),
         backgroundColor: Colors.orange,
         actions: [
+          IconButton(
+            icon: Icon(isSearching ? Icons.cancel : Icons.search),
+            onPressed: () {
+              setState(() {
+                isSearching = !isSearching;
+                if (!isSearching) {
+                  filteredRequests = repairRequests;
+                }
+              });
+            },
+          ),
           IconButton(
             icon: Icon(Icons.all_inclusive),
             onPressed: sortAllRequests,
@@ -202,9 +245,9 @@ class _ExistingRequestsPageState extends State<ExistingRequestsPage> {
         ],
       ),
       body: ListView.builder(
-        itemCount: repairRequests.length,
+        itemCount: filteredRequests.length,
         itemBuilder: (context, index) {
-          RepairRequest request = repairRequests[index];
+          RepairRequest request = filteredRequests[index];
           return Dismissible(
             key: UniqueKey(),
             direction: DismissDirection.startToEnd,
@@ -218,8 +261,7 @@ class _ExistingRequestsPageState extends State<ExistingRequestsPage> {
               child: Align(
                 alignment: Alignment.centerLeft,
                 child: Padding(
-                  padding:
-                  EdgeInsets.only(left: 16.0),
+                  padding: EdgeInsets.only(left: 16.0),
                   child: Icon(Icons.delete, color: Colors.white),
                 ),
               ),
