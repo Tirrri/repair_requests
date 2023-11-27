@@ -181,20 +181,38 @@ class _ExistingRequestsPageState extends State<ExistingRequestsPage> {
     }
   }
 
-  Future<void> deleteRequest(int index) async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    List<String>? requestList = prefs.getStringList('repairRequests');
-    if (requestList != null) {
-      setState(() {
-        repairRequests.removeAt(index);
-        filteredRequests.removeAt(index);
-        requestList = repairRequests
-            .map((request) => jsonEncode(request.toJson()))
-            .toList();
-        prefs.setStringList('repairRequests', requestList!);
-      });
+Future<void> deleteRequest(int index) async {
+  SharedPreferences prefs = await SharedPreferences.getInstance();
+  List<String>? requestList = prefs.getStringList('repairRequests');
+  
+  if (requestList != null && index < requestList.length) {
+    // Обновление списков в памяти
+    if (index < repairRequests.length) {
+      repairRequests.removeAt(index);
     }
+    if (index < filteredRequests.length) {
+      filteredRequests.removeAt(index);
+    }
+    
+    // Кодирование обновленного списка запросов на ремонт в JSON
+    List<String> updatedRequestList = repairRequests
+        .map((request) => jsonEncode(request.toJson()))
+        .toList();
+
+    // Поскольку мы уже проверили, что requestList не null, мы можем быть уверены, что updatedRequestList тоже не содержит null.
+    // Сохранение обновленного списка запросов на ремонт в SharedPreferences
+    await prefs.setStringList('repairRequests', updatedRequestList);
+
+    // Обновление UI должно происходить в основном потоке после асинхронных операций
+    setState(() {
+      // Имеет смысл вызывать setState только если нужно обновить UI после изменения данных
+    });
+  } else {
+    // Обрабатываем ситуацию когда предоставлен невалидный индекс или список пуст
+    print('Попытка удалить элемент с неверным индексом или список пуст: $index');
   }
+}
+
 
 Future<void> searchRequest(String query) async {
   List<RepairRequest> searchResults = repairRequests
