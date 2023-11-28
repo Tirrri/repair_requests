@@ -321,7 +321,7 @@ class EmployeeCard extends StatelessWidget {
                   Text('Отчество: $patronymic',
                     style: TextStyle(fontSize: 16.0),
                   ),
-                  Text('Стаж работы (лет/год): $experience',
+                  Text('Стаж работы в годах: $experience',
                     style: TextStyle(fontSize: 16.0),
                   ),
                 ],
